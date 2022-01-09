@@ -1,0 +1,32 @@
+---
+- hosts: dbdocker
+  become: true
+
+  tasks:
+    - name: Create persistent directory for Portainer files
+      file:
+        path: /opt/docker/portainer
+        state: directory
+        mode: 0755
+        group: ubuntu
+        owner: ubuntu
+
+    - name: Create Portainer container
+      docker_container:
+        name: portainer
+        image: cr.portainer.io/portainer/portainer-ce
+        state: started
+        restart: true
+        published_ports:
+          - "9000:9000"
+        volumes:
+          - /opt/docker/portainer:/data
+          - /var/run/docker.sock:/var/run/docker.sock
+        networks:
+          - name: private
+        labels:
+          traefik.enable: "true"
+          traefik.http.routers.port.rule: "Host(`docker-portainer.apsedge.io`)"
+          traefik.http.routers.port.entrypoints: "websecure"
+          traefik.http.routers.port.tls.certresolver: "myresolver"
+          traefik.http.services.port.loadbalancer.server.port: "9000"

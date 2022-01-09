@@ -1,0 +1,49 @@
+---
+- hosts: dbdocker
+  become: true
+
+  tasks:
+    - name: Create persistent directory for LetsEncrypt files
+      file:
+        path: /opt/docker/traefik
+        state: directory
+        mode: 0755
+        group: ubuntu
+        owner: ubuntu
+
+    - name: Create private network
+      docker_network:
+        name: private
+
+    - name: Create public network
+      docker_network:
+        name: public
+
+    - name: Create Traefik controller
+      docker_container:
+        name: traefik
+        image: traefik:v2.5
+        state: started
+        restart: true
+        published_ports:
+          - "80:80"
+          - "443:443"
+          - "8080:8080"
+        volumes:
+          - /opt/docker/traefik:/letsencrypt
+          - /var/run/docker.sock:/var/run/docker.sock:ro
+        command:
+          #- "--log.level=DEBUG"
+          # - "--certificatesresolvers.myresolver.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+          - "--api.insecure=true"
+          - "--api.dashboard=false"
+          - "--providers.docker=true"
+          - "--providers.docker.exposedbydefault=false"
+          - "--entrypoints.web.address=:80"
+          - "--entrypoints.websecure.address=:443"
+          - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+          - "--certificatesresolvers.myresolver.acme.email=steve.cliff@atos.net"
+          - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+        networks:
+          - name: public
+          - name: private
