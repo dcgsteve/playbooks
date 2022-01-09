@@ -1,0 +1,10 @@
+---
+- hosts: all
+  become: true
+
+  tasks:
+    - name: Remove ephemeral nginx container
+      docker_container:
+        name: nginx
+        state: absent
+        

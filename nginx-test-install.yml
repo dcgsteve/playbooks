@@ -1,0 +1,13 @@
+---
+- hosts: all
+  become: true
+
+  tasks:
+    - name: Create an ephemeral Nginx container
+      docker_container:
+        name: nginx
+        image: nginx
+        state: started
+        restart: true
+        ports:
+          - "8123:80"
